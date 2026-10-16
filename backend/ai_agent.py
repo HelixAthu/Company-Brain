@@ -1,7 +1,8 @@
 import logging
 import re
-from typing import Optional
+from typing import Optional, Dict, Any
 from backend.config import settings
+from backend.graph_executor import execute_cypher, GraphExecutionResult
 
 logger = logging.getLogger("company_brain.ai")
 
@@ -34,8 +35,22 @@ Relationships:
 5. Always alias return variables clearly (e.g., `RETURN s.name AS system_name, t.name AS owner_team`).
 """
 
+SELF_CORRECTION_PROMPT = """
+You are DevTrace AI, an expert Cypher query debugger for FalkorDB.
+The previous Cypher query failed execution with a database error.
+
+Original User Question: {prompt}
+Failed Cypher Query:
+{failed_cypher}
+
+Database Error Message:
+{error_message}
+
+Please fix the query. Output ONLY the corrected executable Cypher query with no explanations, no markdown, and no backticks.
+"""
+
 class GeminiAgent:
-    """Core Google Gemini AI Agent client wrapper."""
+    """Core Google Gemini AI Agent client wrapper with self-correction."""
 
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or settings.GEMINI_API_KEY
@@ -73,7 +88,7 @@ class GeminiAgent:
     def generate_cypher(self, prompt: str) -> str:
         """Translate a natural language question into an executable Cypher query."""
         if not self.is_configured():
-            logger.info("Gemini API key is placeholder or unconfigured. Returning template Cypher.")
+            logger.info("Gemini API key is placeholder or unconfigured. Returning default template query.")
             return "MATCH (s:System)<-[:OWNS]-(t:Team) RETURN s.name AS system, t.name AS team, t.slack_channel AS slack"
 
         client = self.get_client()
@@ -92,6 +107,46 @@ class GeminiAgent:
         except Exception as e:
             logger.error(f"Error calling Gemini for Cypher translation: {e}")
             raise
+
+    def correct_cypher(self, prompt: str, failed_cypher: str, error_message: str) -> str:
+        """Self-correction prompt: send error feedback to Gemini to generate fixed Cypher."""
+        logger.warning(f"Attempting Cypher self-correction. Error was: {error_message}")
+        if not self.is_configured():
+            return failed_cypher
+
+        client = self.get_client()
+        if not client:
+            return failed_cypher
+
+        formatted_prompt = SELF_CORRECTION_PROMPT.format(
+            prompt=prompt,
+            failed_cypher=failed_cypher,
+            error_message=error_message
+        )
+        try:
+            response = client.models.generate_content(
+                model=self.model_name,
+                contents=[{"role": "user", "parts": [{"text": formatted_prompt}]}]
+            )
+            corrected = self.clean_cypher_output(response.text or "")
+            logger.info(f"Self-corrected Cypher query: {corrected}")
+            return corrected
+        except Exception as e:
+            logger.error(f"Error during self-correction request: {e}")
+            return failed_cypher
+
+    def execute_with_self_correction(self, prompt: str, max_retries: int = 1) -> GraphExecutionResult:
+        """Pipeline that generates, executes, and self-corrects Cypher queries against FalkorDB."""
+        initial_cypher = self.generate_cypher(prompt)
+        result = execute_cypher(initial_cypher)
+
+        if result.success or max_retries <= 0:
+            return result
+
+        logger.info("Initial Cypher execution failed. Triggering self-correction loop...")
+        corrected_cypher = self.correct_cypher(prompt, initial_cypher, result.error or "Unknown syntax error")
+        corrected_result = execute_cypher(corrected_cypher)
+        return corrected_result
 
 # Global singleton
 gemini_agent = GeminiAgent()
