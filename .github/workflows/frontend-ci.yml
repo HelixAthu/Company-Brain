@@ -12,10 +12,14 @@ on:
       - 'frontend/**'
       - '.github/workflows/frontend-ci.yml'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Vite Build Verification
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
