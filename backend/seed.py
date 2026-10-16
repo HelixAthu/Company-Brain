@@ -86,6 +86,49 @@ def seed_systems_and_dependencies(graph):
         graph.query(q)
     logger.info("Systems and dependency graph seeded successfully.")
 
+def seed_documents_and_decisions(graph):
+    """Seed technical runbooks, architecture specs, and Architecture Decision Records (ADRs)."""
+    logger.info("Seeding documentation and architectural decisions...")
+    queries = [
+        # Create Documents
+        """
+        CREATE (d1:Document {id: 'doc_payment_runbook', title: 'Payment Gateway Incident Runbook & Disaster Recovery', type: 'Runbook', url: 'https://wiki.company.internal/runbooks/payment-gateway', last_updated: '2026-03-15'})
+        CREATE (d2:Document {id: 'doc_auth_spec', title: 'Zero Trust Authentication & OAuth2 Architecture Specification', type: 'Architecture Spec', url: 'https://wiki.company.internal/specs/zero-trust-auth', last_updated: '2026-01-10'})
+        CREATE (d3:Document {id: 'doc_billing_disaster', title: 'Billing DB Failover Procedure & Hot Standby Runbook', type: 'Runbook', url: 'https://wiki.company.internal/runbooks/billing-db-failover', last_updated: '2026-02-28'})
+        """,
+        # Create Decisions (ADRs)
+        """
+        CREATE (dec1:Decision {id: 'adr_012_falkordb_migration', title: 'ADR-012: Migration from Legacy Redis Cache to FalkorDB Graph Engine', status: 'Accepted', rationale: 'FalkorDB provides sub-millisecond graph traversals and Cypher queries for deep service dependency mapping, replacing inflexible Redis key-value lookups.', date: '2026-02-01'})
+        CREATE (dec2:Decision {id: 'adr_008_jwt_sso', title: 'ADR-008: Adoption of Ed25519 JWT Tokens for Auth Microservice', status: 'Accepted', rationale: 'Reduces token signing latency by 45% and improves multi-datacenter verification resilience.', date: '2025-11-20'})
+        """,
+        # Link Authorship and Documentation
+        """
+        MATCH (p_alice:Person {id: 'alice_johnson'}), (p_bob:Person {id: 'bob_smith'}), (p_charlie:Person {id: 'charlie_davis'})
+        MATCH (s_pay:System {id: 'payment_gateway'}), (s_auth:System {id: 'auth_microservice'}), (s_bill:System {id: 'billing_db'}), (s_cache:System {id: 'redis_cache'}), (s_graph:System {id: 'falkordb_graph'})
+        MATCH (d1:Document {id: 'doc_payment_runbook'}), (d2:Document {id: 'doc_auth_spec'}), (d3:Document {id: 'doc_billing_disaster'})
+        MATCH (dec1:Decision {id: 'adr_012_falkordb_migration'}), (dec2:Decision {id: 'adr_008_jwt_sso'})
+
+        CREATE (p_bob)-[:AUTHORED]->(d1)
+        CREATE (d1)-[:DOCUMENTS]->(s_pay)
+
+        CREATE (p_charlie)-[:AUTHORED]->(d2)
+        CREATE (d2)-[:DOCUMENTS]->(s_auth)
+
+        CREATE (p_alice)-[:AUTHORED]->(d3)
+        CREATE (d3)-[:DOCUMENTS]->(s_bill)
+
+        CREATE (p_alice)-[:RECORDED]->(dec1)
+        CREATE (dec1)-[:DOCUMENTS]->(s_cache)
+        CREATE (dec1)-[:DOCUMENTS]->(s_graph)
+
+        CREATE (p_charlie)-[:RECORDED]->(dec2)
+        CREATE (dec2)-[:DOCUMENTS]->(s_auth)
+        """
+    ]
+    for q in queries:
+        graph.query(q)
+    logger.info("Documents, ADRs, and provenance links seeded successfully.")
+
 def seed_database():
     """Main database seeding pipeline."""
     logger.info("Starting FalkorDB Company Brain seeding pipeline...")
@@ -97,7 +140,8 @@ def seed_database():
     clear_graph(graph)
     seed_teams_and_people(graph)
     seed_systems_and_dependencies(graph)
-    logger.info("Systems and dependencies initialization complete.")
+    seed_documents_and_decisions(graph)
+    logger.info("Complete graph knowledge base initialization complete.")
     return True
 
 if __name__ == "__main__":
