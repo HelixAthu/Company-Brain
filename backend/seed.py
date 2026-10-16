@@ -47,6 +47,45 @@ def seed_teams_and_people(graph):
         graph.query(q)
     logger.info("Teams and personnel seeded successfully.")
 
+def seed_systems_and_dependencies(graph):
+    """Seed microservices, databases, and architectural DEPENDS_ON / OWNS edges."""
+    logger.info("Seeding microservices systems and dependency tree...")
+    queries = [
+        # Create Systems
+        """
+        CREATE (s1:System {id: 'payment_gateway', name: 'Payment Gateway', tier: 'Tier-1', repo_url: 'github.com/company/payment-gateway', status: 'production', description: 'Core transaction orchestrator and payment processor'})
+        CREATE (s2:System {id: 'auth_microservice', name: 'Auth Microservice', tier: 'Tier-1', repo_url: 'github.com/company/auth-service', status: 'production', description: 'Authentication and JWT authorization authority'})
+        CREATE (s3:System {id: 'billing_db', name: 'Billing DB', tier: 'Tier-1', repo_url: 'github.com/company/billing-cluster', status: 'production', description: 'Primary PostgreSQL cluster for transactions and billing accounts'})
+        CREATE (s4:System {id: 'notification_svc', name: 'Notification Service', tier: 'Tier-2', repo_url: 'github.com/company/notification-svc', status: 'production', description: 'Dispatches real-time webhooks, emails, and transaction receipts'})
+        CREATE (s5:System {id: 'redis_cache', name: 'Redis Cache Cluster', tier: 'Tier-2', repo_url: 'github.com/company/cache-cluster', status: 'deprecated', description: 'Legacy in-memory cache, superseded by FalkorDB graph layer'})
+        CREATE (s6:System {id: 'falkordb_graph', name: 'FalkorDB Graph Engine', tier: 'Tier-1', repo_url: 'github.com/company/falkordb-cluster', status: 'production', description: 'High-performance Low-Latency Cypher Graph Engine for Company Brain'})
+        """,
+        # Link Teams to Systems (OWNS)
+        """
+        MATCH (t_pay:Team {id: 'payments_team'}), (t_infra:Team {id: 'core_infra'}), (t_id:Team {id: 'identity_team'})
+        MATCH (s1:System {id: 'payment_gateway'}), (s2:System {id: 'auth_microservice'}), (s3:System {id: 'billing_db'}), (s4:System {id: 'notification_svc'}), (s5:System {id: 'redis_cache'}), (s6:System {id: 'falkordb_graph'})
+        CREATE (t_pay)-[:OWNS {sla: '99.99%', on_call_rotation: 'weekly'}]->(s1)
+        CREATE (t_id)-[:OWNS {sla: '99.99%', on_call_rotation: 'weekly'}]->(s2)
+        CREATE (t_infra)-[:OWNS {sla: '99.999%', on_call_rotation: 'primary'}]->(s3)
+        CREATE (t_pay)-[:OWNS {sla: '99.9%', on_call_rotation: 'bi-weekly'}]->(s4)
+        CREATE (t_infra)-[:OWNS {sla: 'deprecated', on_call_rotation: 'none'}]->(s5)
+        CREATE (t_infra)-[:OWNS {sla: '99.99%', on_call_rotation: 'primary'}]->(s6)
+        """,
+        # Link System Dependencies (DEPENDS_ON)
+        """
+        MATCH (s1:System {id: 'payment_gateway'}), (s2:System {id: 'auth_microservice'}), (s3:System {id: 'billing_db'}), (s4:System {id: 'notification_svc'}), (s6:System {id: 'falkordb_graph'})
+        CREATE (s1)-[:DEPENDS_ON {protocol: 'gRPC', critical: true}]->(s2)
+        CREATE (s1)-[:DEPENDS_ON {protocol: 'TCP / SSL', critical: true}]->(s3)
+        CREATE (s1)-[:DEPENDS_ON {protocol: 'Async Webhook', critical: false}]->(s4)
+        CREATE (s2)-[:DEPENDS_ON {protocol: 'SQL', critical: true}]->(s3)
+        CREATE (s4)-[:DEPENDS_ON {protocol: 'SQL', critical: true}]->(s3)
+        CREATE (s1)-[:DEPENDS_ON {protocol: 'Cypher / Bolt', critical: false}]->(s6)
+        """
+    ]
+    for q in queries:
+        graph.query(q)
+    logger.info("Systems and dependency graph seeded successfully.")
+
 def seed_database():
     """Main database seeding pipeline."""
     logger.info("Starting FalkorDB Company Brain seeding pipeline...")
@@ -57,7 +96,8 @@ def seed_database():
 
     clear_graph(graph)
     seed_teams_and_people(graph)
-    logger.info("Teams and personnel initialization complete.")
+    seed_systems_and_dependencies(graph)
+    logger.info("Systems and dependencies initialization complete.")
     return True
 
 if __name__ == "__main__":
