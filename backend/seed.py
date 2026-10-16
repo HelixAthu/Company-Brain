@@ -129,6 +129,32 @@ def seed_documents_and_decisions(graph):
         graph.query(q)
     logger.info("Documents, ADRs, and provenance links seeded successfully.")
 
+def verify_seed_counts(graph) -> dict:
+    """Verify seeded node and relationship counts via Cypher inspection."""
+    logger.info("Validating graph seeding counts and schema integrity...")
+    stats = {}
+    
+    node_res = graph.query("MATCH (n) RETURN count(n) AS node_count")
+    total_nodes = node_res.result_set[0][0] if node_res.result_set else 0
+    stats["total_nodes"] = total_nodes
+
+    edge_res = graph.query("MATCH ()-[r]->() RETURN count(r) AS edge_count")
+    total_edges = edge_res.result_set[0][0] if edge_res.result_set else 0
+    stats["total_edges"] = total_edges
+
+    for label in ["Person", "Team", "System", "Document", "Decision"]:
+        res = graph.query(f"MATCH (n:{label}) RETURN count(n)")
+        count = res.result_set[0][0] if res.result_set else 0
+        stats[label] = count
+
+    logger.info(f"Seeding Validation: {total_nodes} nodes, {total_edges} relationships created.")
+    logger.info(f"Breakdown: People: {stats.get('Person')}, Teams: {stats.get('Team')}, Systems: {stats.get('System')}, Documents: {stats.get('Document')}, Decisions: {stats.get('Decision')}")
+    
+    assert total_nodes >= 15, f"Expected at least 15 nodes, found {total_nodes}"
+    assert total_edges >= 15, f"Expected at least 15 edges, found {total_edges}"
+    logger.info("Seeding assertions verified successfully!")
+    return stats
+
 def seed_database():
     """Main database seeding pipeline."""
     logger.info("Starting FalkorDB Company Brain seeding pipeline...")
@@ -141,7 +167,8 @@ def seed_database():
     seed_teams_and_people(graph)
     seed_systems_and_dependencies(graph)
     seed_documents_and_decisions(graph)
-    logger.info("Complete graph knowledge base initialization complete.")
+    verify_seed_counts(graph)
+    logger.info("Complete graph knowledge base initialization and validation complete.")
     return True
 
 if __name__ == "__main__":
