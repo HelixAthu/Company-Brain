@@ -1,0 +1,35 @@
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Logs & Database runtime
+*.log
+falkordb-data/
+docker-data/
+*.rdb
+
+# Temporary directories
+tmp/
+temp/
