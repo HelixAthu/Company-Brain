@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Clock3,
   CircleHelp,
@@ -68,6 +68,32 @@ function App() {
   const [fallbackMode, setFallbackMode] = useState(false);
   const [activeTrace, setActiveTrace] = useState(initialMessages[2]);
   const [dbConnected, setDbConnected] = useState(true);
+
+  // Real-time FalkorDB connection polling hook
+  useEffect(() => {
+    let isMounted = true;
+
+    async function pollHealth() {
+      try {
+        const health = await checkHealth();
+        if (isMounted) {
+          setDbConnected(health.falkordb_connected ?? true);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setDbConnected(false);
+        }
+      }
+    }
+
+    pollHealth();
+    const interval = setInterval(pollHealth, 10000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   async function handleSendQuestion(questionText) {
     const trimmed = (questionText || input).trim();
@@ -150,8 +176,10 @@ function App() {
 
         <div className="header-center">
           <div className="connection-status">
-            <span className={`status-dot ${dbConnected ? '' : 'disconnected'}`} />
-            {dbConnected ? 'FalkorDB Connected' : 'FalkorDB Connecting...'}
+            <span className={`status-dot ${dbConnected ? 'connected' : 'disconnected'}`} />
+            <span className={dbConnected ? 'status-text' : 'status-text offline'}>
+              {dbConnected ? 'FalkorDB Connected' : 'FalkorDB Offline (Demo Active)'}
+            </span>
           </div>
           <span className="header-divider" />
           <span className="workspace-label">
