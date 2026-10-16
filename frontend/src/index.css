@@ -1,0 +1,58 @@
+/* Custom Elite Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(71, 215, 212, 0.35);
+}
+
+/* Ambient Glowing Background Animations */
+@keyframes ambientGlow {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.16;
+  }
+  50% {
+    transform: translate(30px, -20px) scale(1.12);
+    opacity: 0.24;
+  }
+  100% {
+    transform: translate(-20px, 25px) scale(0.95);
+    opacity: 0.18;
+  }
+}
+
+.ambient-one {
+  animation: ambientGlow 18s ease-in-out infinite alternate;
+}
+
+.ambient-two {
+  animation: ambientGlow 22s ease-in-out infinite alternate-reverse;
+}
+
+.ambient-three {
+  animation: ambientGlow 26s ease-in-out infinite alternate;
+}
+
+/* Smooth Focus Rings & Selection Styles */
+::selection {
+  background: rgba(71, 215, 212, 0.25);
+  color: #d8fbf7;
+}
+
+input:focus-visible, button:focus-visible {
+  outline: 2px solid rgba(71, 215, 212, 0.4);
+  outline-offset: 2px;
+}
