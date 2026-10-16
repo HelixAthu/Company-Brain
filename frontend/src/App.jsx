@@ -10,6 +10,8 @@ import {
   Search,
   Send,
   Zap,
+  PlayCircle,
+  Radio,
 } from 'lucide-react';
 import { askQuestion, checkHealth } from './services/api';
 import MessageList from './components/MessageList';
@@ -155,6 +157,20 @@ function App() {
           <span className="workspace-label">
             <span className="workspace-dot" /> acme-platform / production
           </span>
+          <span className="header-divider" />
+          
+          {/* Topbar Demo Mode Switch */}
+          <div className="header-demo-toggle">
+            <button
+              type="button"
+              className={`demo-pill ${fallbackMode ? 'active' : ''}`}
+              onClick={() => setFallbackMode(!fallbackMode)}
+              title="Toggle between live FalkorDB/Gemini execution and pre-computed demo resilience"
+            >
+              {fallbackMode ? <PlayCircle size={13} /> : <Radio size={13} />}
+              <span>{fallbackMode ? 'Demo Mode Active' : 'Live Graph Mode'}</span>
+            </button>
+          </div>
         </div>
 
         <nav className="top-actions">
@@ -179,6 +195,12 @@ function App() {
           <div className="mobile-nav">
             <a href="#activity">Activity</a>
             <a href="#docs">Docs</a>
+            <button
+              className="mobile-demo-btn"
+              onClick={() => setFallbackMode(!fallbackMode)}
+            >
+              {fallbackMode ? 'Switch to Live Mode' : 'Switch to Demo Mode'}
+            </button>
           </div>
         )}
       </header>
