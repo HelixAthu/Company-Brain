@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  falkordb:
+    image: falkordb/falkordb:latest
+    container_name: devtrace-falkordb
+    ports:
+      - "6379:6379"
+    volumes:
+      - falkordb_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: devtrace-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - FALKORDB_HOST=falkordb
+      - FALKORDB_PORT=6379
+      - FALKORDB_GRAPH=company_brain
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-your_gemini_api_key_here}
+      - DEMO_MODE=${DEMO_MODE:-false}
+    depends_on:
+      falkordb:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  falkordb_data:
+    driver: local
