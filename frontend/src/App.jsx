@@ -201,24 +201,7 @@ function App() {
           </div>
         </div>
 
-        <nav className="top-actions">
-          <button
-            className="icon-button mobile-menu-button"
-            aria-label="Open navigation"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <Menu size={18} />
-          </button>
-          <a href="#activity">
-            <Clock3 size={15} /> Activity
-          </a>
-          <a href="#docs">
-            <CircleHelp size={15} /> Docs
-          </a>
-          <button className="avatar" aria-label="Open account menu">
-            AR
-          </button>
-        </nav>
+        
         {mobileMenuOpen && (
           <div className="mobile-nav">
             <a href="#activity">Activity</a>

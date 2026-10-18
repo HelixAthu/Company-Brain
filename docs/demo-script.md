@@ -21,7 +21,7 @@
 - **Visual Action:** Watch the answer stream in instantaneously (3.4ms latency badge).
 - **Voiceover:**
   > *"Let's ask DevTrace: 'Who owns the Payment Gateway?'  
-  > In less than 4 milliseconds, FalkorDB traverses the graph from the Payment Gateway node to the Payments Team, returning Elena Rostova as Staff Architect and Bob Smith as the on-call engineer, complete with their direct Slack channels and disaster recovery runbooks."*
+  > In less than 4 milliseconds, FalkorDB traverses the graph from the Payment Gateway node to the Payments Team, returning Elena Rostova as Staff Architect/ Tech lead and Bob Smith as the senior on-call engineer, complete with their direct Slack channels and disaster recovery runbooks."*
 
 ---
 
